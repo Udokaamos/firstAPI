@@ -1,12 +1,10 @@
 from rest_framework import serializers
-from django.contrib.auth import get_user_model
+from main.models import Song
 
-User = get_user_model()
-
-class UserSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(max_length = 255, write_only=True)
+class SongSerializer(serializers.ModelSerializer):
+    # password = serializers.CharField(max_length = 255, write_only=True)
 
     class Meta:
-        model = User
+        model = Song
         # fields = '__all__'
-        fields = ['id', 'first_name', 'last_name', 'email', 'password', 'phone', 'date_joined']
+        fields = ['title', 'artist', 'publish_date', 'date_created']
