@@ -16,8 +16,8 @@ class SongTestcase(TestCase):
 #         # print(hashed_password)
 
         self.assertEqual(str(Song), "title")
-        self.assertEqual(Song.artist, "")
-        self.assertEqual(Song.publish_date, "John")
+        self.assertEqual(Song.artist)
+        self.assertEqual(Song.publish_date)
         self.assertEqual(Song.date_created)
 
     def test_all_song(self):
