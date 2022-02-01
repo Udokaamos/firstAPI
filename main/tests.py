@@ -1,27 +1,25 @@
 # # import email
-# from django.test import TestCase
-
-
-# # from koalaAPI.main.models import Song
+from django.test import TestCase
+from .models import Song
 
 # # Create your tests here.
 
 
-# class SongModelTestcase(TestCase):
+class SongTestcase(TestCase):
 
-#     @classmethod
-#     def setUpTestData(cls):
-#         User.objects.create(first_name="Peter", last_name="John", password="111b2", email="email@gmail.com", phone="090398475895")
+    # @classmethod
+    def text_song(self):
+        Song.objects.create('title', 'artist', 'publish_date', 'date_created')
 
-#     def test_single_user(self):
-#         user = User.objects.get(id=1)
+#     def test_song(self):
+#         song= Song.objects.get(id=1)
 #         # print(hashed_password)
 
-#         self.assertEqual(str(user), "email@gmail.com")
-#         self.assertEqual(user.first_name, "Peter")
-#         self.assertEqual(user.last_name, "John")
-#         self.assertEqual(check_password('111b2', user.password), True)
+        self.assertEqual(str(Song), "title")
+        self.assertEqual(Song.artist, "")
+        self.assertEqual(Song.publish_date, "John")
+        self.assertEqual(Song.date_created)
 
-#     def test_all_song(self):
-#         songs = Song.objects.all()
-#         self.assertEqual(songs.count(), 1)
+    def test_all_song(self):
+        songs = Song.objects.all()
+        self.assertEqual(songs.count(), 0)
