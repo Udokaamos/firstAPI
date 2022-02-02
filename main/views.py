@@ -3,14 +3,18 @@ from rest_framework import status
 from django.http import JsonResponse
 from rest_framework.decorators import api_view
 from main.models import Song
-from .serializers import SongSerializer
+from .serializers import  SongSerializer 
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
+from django.contrib.auth import authenticate
+from django.forms import model_to_dict
+from rest_framework.exceptions import ValidationError
+
 
 
 @swagger_auto_schema(method='post', 
                     request_body=SongSerializer(),
-                    operation_description="This is a function to create new users.",
+                    operation_description="This is a function to add new songs.",
                     responses= {201: openapi.Response("""An example success response is:
                     ``{
                         "message": "successful",
@@ -72,6 +76,93 @@ def song_view(request):
             }
             return Response(data, status=status.HTTP_400_BAD_REQUEST)
 
+# @swagger_auto_schema(method='post',
+#                     request_body=LoginSerializer())
+# @api_view(['POST'])
+# def login_view(request):
+
+#     serializer = LoginSerializer(data=request.data)
+
+#     if serializer.is_valid():
+
+#         user = authenticate(email=serializer.validated_data['email'], password=serializer.validated_data['password'])
+
+#         if user:
+
+#             data = {
+#                 'message' : 'success',
+#                 'data' : model_to_dict(user, ['id',
+#                                                'title',
+#                                                'artist',
+#                                                'publish_date',
+#                                                'date_created',
+#                                                ])
+#                 }
+#             return Response(data, status=status.HTTP_201_CREATED)
+#         else:
+#             data = {
+#                     'message' : 'Please enter a valid email and password'
+#                 }
+#             return Response(data, status=status.HTTP_401_UNAUTHORIZED)
+#     else:
+#         data = {
+#             'message' : 'failed',
+#             'error' : serializer.errors
+#         }
+#     return Response(data, status=status.HTTP_400_BAD_REQUEST)
+
+
+@swagger_auto_schema(methods=['put'],
+                    request_body=SongSerializer())
+@api_view(['GET', 'PUT', 'DELETE'])
+def profile_view(request, song_id):
+
+    try:
+        user = Song.objects.get(id=song_id)
+    except Song.DoesNotExist:
+
+
+        data = {
+            'message' : 'failed',
+            'error' : f"Song with ID {song_id} does not exist."
+        }
+        return Response(data, status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == "GET":
+        serializer = SongSerializer(user)
+
+        data = {
+            "message":"successful",
+            "data": serializer.data
+        }
+
+        return Response(data, status=status.HTTP_200_OK)
+
+    elif request.method == 'PUT':
+        serializer = SongSerializer(user, data=request.data, partial=True)
+        if serializer.is_valid():
+            if 'password' in serializer.validated_data.keys():
+                raise ValidationError(detail={
+                    "message":"Edit password action not allowed"
+                }, code=status.HTTP_403_FORBIDDEN)
+            
+            serializer.save()
+            data = {
+                'message' : 'success',
+                'data' : serializer.data
+            }
+            return Response(data, status=status.HTTP_202_ACCEPTED)
+        else:
+            data = {
+                'message' : 'failed',
+                'error' : serializer.errors
+            }
+            return Response(data, status=status.HTTP_400_BAD_REQUEST)
+
+    elif request.method=="DELETE":
+        user.delete()
+
+        return Response({}, status=status.HTTP_204_NO_CONTENT)
 
 
 
