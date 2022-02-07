@@ -72,8 +72,7 @@ def user_view(request):
                         }``""")
                     }
 )
-# @api_view(['GET', 'POST'])
-# def user_view(request):
+
 @api_view(['POST'])
 def create_account(request):
     
@@ -134,6 +133,8 @@ def login_view(request):
 @swagger_auto_schema(methods=['put'],
                     request_body=UserSerializer())
 @api_view(['GET', 'PUT', 'DELETE'])
+@authentication_classes([BasicAuthentication])
+@permission_classes([IsAuthenticated])
 def profile_view(request, user_id):
     user = request.user
     # try:
