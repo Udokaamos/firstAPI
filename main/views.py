@@ -6,7 +6,7 @@ from .serializers import PlayListSerializer, SongSerializer
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.authentication import BasicAuthentication
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError, PermissionDenied
 
 # Create your views here.
 @swagger_auto_schema(methods=['POST'] ,
@@ -104,7 +104,7 @@ def song_detail(request, song_id):
 
 @swagger_auto_schema(methods=['POST'] ,
                     request_body=PlayListSerializer())
-@api_view(['GET', 'POST', 'DELETE'])
+@api_view(['GET', 'POST'])
 @authentication_classes([BasicAuthentication])
 @permission_classes([IsAuthenticated])
 def playlists(request):
@@ -145,37 +145,33 @@ def playlists(request):
             }
             return Response(data, status=status.HTTP_400_BAD_REQUEST)
         
-    elif request.method=="DELETE":
-            user.delete()
-        
-            return Response({}, status=status.HTTP_204_NO_CONTENT)
-        
     
     
     
 
     
     
-@swagger_auto_schema(methods=['put'] ,
-                    request_body=SongSerializer())
-@api_view(['GET', 'PUT', 'DELETE'])
+
+@api_view(['GET', 'DELETE'])
 @authentication_classes([BasicAuthentication])
 @permission_classes([IsAuthenticated])
-def song_detail(request, song_id):
+def playlist_detail(request, item_id):
 
     
     try:
-        song = Song.objects.get(id=song_id)
-    except Song.DoesNotExist:
+        song = PlayList.objects.get(id=item_id)
+    except PlayList.DoesNotExist:
 
         data = {
             'message' : 'failed',
-            'error'  : f"Song with ID {song_id} does not exist."
+            'error'  : f"Playlist with ID {item_id} does not exist."
         }
         return Response(data, status=status.HTTP_404_NOT_FOUND)
+    if song.user != request.user:
+        raise PermissionDenied(detail={"message":"You do not have the permission to view this item."})
     
     if request.method == "GET":
-        serializer = SongSerializer(song)
+        serializer = PlayListSerializer(song)
         
         data = {
            "message":"successful",
@@ -185,23 +181,6 @@ def song_detail(request, song_id):
     
         return Response(data, status=status.HTTP_200_OK)
     
-    elif request.method == 'PUT':
-        serializer = SongSerializer(song, data=request.data, partial=True)
-        if serializer.is_valid():
-                
-            serializer.save()
-            data = {
-                'message' : 'success',
-                'data'  : serializer.data
-            }
-            return Response(data, status=status.HTTP_202_ACCEPTED)
-        else:
-            data = {
-                'message' : 'failed',
-                'error'  : serializer.errors
-            }
-            return Response(data, status=status.HTTP_400_BAD_REQUEST)
-        
     elif request.method=="DELETE":
         song.delete()
         

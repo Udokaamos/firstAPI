@@ -134,3 +134,14 @@ STATIC_URL = '/static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'account.User'
+
+
+# EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+DEFAULT_FROM_EMAIL = 'your-default-email'
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmass.co'
+EMAIL_HOST_USER = "your-gmass-username"
+EMAIL_HOST_PASSWORD = "your-gmass-password"
+EMAIL_PORT = 25 
+EMAIL_USE_TLS = True

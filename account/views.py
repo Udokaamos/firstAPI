@@ -1,10 +1,8 @@
-import email
 from rest_framework.response import Response
 from rest_framework import status 
 from django.http import JsonResponse
 from rest_framework.decorators import api_view, authentication_classes, permission_classes
-# from uritemplate import partial
-from .serializers import LoginSerializer, UserSerializer
+from .serializers import ResendOTPSerializer, UserSerializer, LoginSerializer, VerifyOTPSerializer
 from django.contrib.auth import get_user_model
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
@@ -14,8 +12,6 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.authentication import BasicAuthentication
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 
-# from koalaAPI.account import serializers
-
 User = get_user_model()
 
 
@@ -23,19 +19,20 @@ User = get_user_model()
 @authentication_classes([BasicAuthentication])
 @permission_classes([IsAdminUser])
 def user_view(request):
-
+    
     if request.method == 'GET':
-        #Get all the users in the database
+        # Get all the users in the database
         all_users = User.objects.all()
-
+        
         serializer = UserSerializer(all_users, many=True)
-
+        
         data = {
-            "message":"successful",
-            "data": serializer.data
+           "message":"successful",
+           "data": serializer.data
         }
-
-        #return JsonResponse(data)
+    
+    
+        # return JsonResponse(data)
         return Response(data, status=status.HTTP_200_OK)
 
 
@@ -72,12 +69,11 @@ def user_view(request):
                         }``""")
                     }
 )
-
 @api_view(['POST'])
 def create_account(request):
     
     if request.method == "POST":
-        #Allows User to sign up or create account
+        #Allows user to signup or create account
         serializer = UserSerializer(data=request.data) #deserialize the data
         
         if serializer.is_valid(): #validate the data that was passed
@@ -93,28 +89,31 @@ def create_account(request):
                 'error'  : serializer.errors
             }
             return Response(data, status=status.HTTP_400_BAD_REQUEST)
+        
+        
+        
 
-@swagger_auto_schema(method='post',
+@swagger_auto_schema(method='post', 
                     request_body=LoginSerializer())
 @api_view(['POST'])
 def login_view(request):
-
+    
     serializer = LoginSerializer(data=request.data)
-
+    
     if serializer.is_valid():
-
+        
         user = authenticate(email=serializer.validated_data['email'], password=serializer.validated_data['password'])
-
-        if user:
-
+        
+        if user: 
+        
             data = {
-                'message' : 'success',
-                'data' : model_to_dict(user, ['id',
-                                               'first_name',
-                                               'last_name',
-                                               'email',
-                                               'phone',
-                                               'is_admin'])
+                    'message' : 'success',
+                    'data'  : model_to_dict(user, ['id', 
+                                                   'first_name',
+                                                   'last_name',
+                                                   'email',
+                                                   'phone',
+                                                   'is_admin'])
                 }
             return Response(data, status=status.HTTP_201_CREATED)
         else:
@@ -125,61 +124,93 @@ def login_view(request):
     else:
         data = {
             'message' : 'failed',
-            'error' : serializer.errors
+            'error'  : serializer.errors
         }
-    return Response(data, status=status.HTTP_400_BAD_REQUEST)
+        return Response(data, status=status.HTTP_400_BAD_REQUEST)
+    
 
 
-@swagger_auto_schema(methods=['put'],
+@swagger_auto_schema(methods=['put'] ,
                     request_body=UserSerializer())
 @api_view(['GET', 'PUT', 'DELETE'])
 @authentication_classes([BasicAuthentication])
 @permission_classes([IsAuthenticated])
-def profile_view(request, user_id):
+def profile_view(request):
     user = request.user
+    # user = User.objects.first()
+    
     # try:
     #     user = User.objects.get(id=user_id)
     # except User.DoesNotExist:
 
-
     #     data = {
     #         'message' : 'failed',
-    #         'error' : f"User with ID {user_id} does not exist."
+    #         'error'  : f"User with ID {user_id} does not exist."
     #     }
     #     return Response(data, status=status.HTTP_404_NOT_FOUND)
-
+    
     if request.method == "GET":
         serializer = UserSerializer(user)
-
+        
         data = {
-            "message":"successful",
-            "data": serializer.data
+           "message":"successful",
+           "data": serializer.data
         }
-
+    
+    
         return Response(data, status=status.HTTP_200_OK)
-
+    
     elif request.method == 'PUT':
         serializer = UserSerializer(user, data=request.data, partial=True)
-        if serializer.is_valid():
+        if serializer.is_valid(): 
             if 'password' in serializer.validated_data.keys():
                 raise ValidationError(detail={
                     "message":"Edit password action not allowed"
                 }, code=status.HTTP_403_FORBIDDEN)
-            
+                
             serializer.save()
             data = {
                 'message' : 'success',
-                'data' : serializer.data
+                'data'  : serializer.data
             }
             return Response(data, status=status.HTTP_202_ACCEPTED)
         else:
             data = {
                 'message' : 'failed',
-                'error' : serializer.errors
+                'error'  : serializer.errors
             }
             return Response(data, status=status.HTTP_400_BAD_REQUEST)
-
+        
     elif request.method=="DELETE":
         user.delete()
-
+        
         return Response({}, status=status.HTTP_204_NO_CONTENT)
+    
+
+@swagger_auto_schema(methods=['POST'] ,
+                    request_body=VerifyOTPSerializer())
+@api_view(["POST"])
+def verify_otp(request):
+    serializer = VerifyOTPSerializer(data=request.data)
+
+    if serializer.is_valid():
+        user = serializer.verify()
+        user_serializer = UserSerializer(user)
+        data = {
+            'message' : 'account activated',
+            'data' : user_serializer.data
+        }
+        return Response(data, status=status.HTTP_200_OK)
+    
+    
+    
+@swagger_auto_schema(methods=['POST'] ,
+                    request_body=ResendOTPSerializer())
+@api_view(["POST"])
+def new_otp(request):
+    serializer = ResendOTPSerializer(data=request.data)
+
+    if serializer.is_valid():
+        data = serializer.get_new_otp()
+        
+        return Response(data, status=status.HTTP_200_OK)
